@@ -33,7 +33,6 @@ class ProductsController extends Controller
         }
 
         $products = $builder->paginate(16);
-//        $products = Product::query()->where('on_sale', true)->paginate(16);
 
         return view('products.index', [
             'products' => $products,
@@ -43,4 +42,14 @@ class ProductsController extends Controller
             ]
         ]);
     }
+
+    public function show(Product $product, Request $request)
+    {
+        if (!$product->on_sale) {
+            throw new \Exception('商品未上架');
+        }
+
+        return view('products.show', ['product' => $product]);
+    }
+
 }
