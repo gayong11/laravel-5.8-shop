@@ -45,7 +45,7 @@ class OrderService
 
                 $totalAmount += $sku->price * $data['amount'];
                 if ($sku->decreaseStock($data['amount']) <= 0) {
-                    throw  new InvalidRequestException('该商品库存股不足');
+                    throw  new InvalidRequestException('该商品库存不足');
                 }
             }
 
