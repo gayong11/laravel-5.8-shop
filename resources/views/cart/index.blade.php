@@ -172,6 +172,8 @@
                             });
                             html += '</div>';
                             swal({content: $(html)[0], icon: 'error'});
+                        } else if (error.response.status === 403) {
+                            swal(error.response.data.msg, '', 'error');
                         } else {
                             swal('系统错误', '', 'error');
                         }
@@ -193,6 +195,7 @@
                         $('#btn-cancel-coupon').show();
                         $('#btn-check-coupon').hide();
                     }, function (error) {
+                        console.log(error.response.status)
                         if (error.response.status === 404) {
                             swal('优惠券不存在', '', 'error')
                         } else if (error.response.status === 403) {
