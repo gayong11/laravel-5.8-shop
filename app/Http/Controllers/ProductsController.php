@@ -7,7 +7,6 @@ use App\Models\Category;
 use App\Models\OrderItem;
 use App\Models\Product;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Redis;
 
 class ProductsController extends Controller
 {
