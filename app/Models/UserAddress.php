@@ -36,6 +36,12 @@ class UserAddress extends Model
     protected $dates = ['last_used_at'];
 
     /**
+     * 追加字段
+     * @var array
+     */
+    protected $appends = ['full_address'];
+
+    /**
      * 逆向关联用户表一对多
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
