@@ -56,7 +56,7 @@
             </tr>
 
             @if ($order->ship_status === \App\Models\Order::SHIP_STATUS_PENDING)
-                @if($order->refund_status !== \App\Models\Order::REFUND_STATUS_SUCCESS)
+                @if($order->refund_status !== \App\Models\Order::REFUND_STATUS_SUCCESS && ($order->type !== \App\Models\Order::TYPE_CROWDFUNDING || $order->items[0]->product->crowndfunding->status === \App\Models\CrowdfundingProduct::STATUS_SUCCESS))
                 <tr>
                     <td colspan="4">
                         <form action="{{ route('admin.order.ship', [$order->id]) }}" method="post" class="form-inline">

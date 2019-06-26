@@ -10,12 +10,10 @@ use App\Http\Requests\CrowdFundingOrderRequest;
 use App\Http\Requests\OrderRequest;
 use App\Http\Requests\Request;
 use App\Http\Requests\SendReviewRequest;
-use App\Jobs\CloseOrder;
 use App\Models\CouponCode;
 use App\Models\ProductSku;
 use App\Models\UserAddress;
 use App\Models\Order;
-use App\Services\CartService;
 use App\Services\OrderService;
 use Carbon\Carbon;
 
@@ -125,6 +123,10 @@ class OrdersController extends Controller
             throw new InvalidRequestException('该订单已经申请退款, 请勿重复申请');
         }
 
+        if ($order->type === Order::TYPE_CROWDFUNDING) {
+            throw new InvalidRequestException('众筹订单不支持退款');
+        }
+
         $extra = $order->extra?: [];
         $extra['refund_reason'] = $request->get('reason');
         $order->update([
@@ -138,6 +140,8 @@ class OrdersController extends Controller
     public function crowdfunding(CrowdFundingOrderRequest $request, OrderService $orderService)
     {
         $user    = $request->user();
+
+        $user->addresses()->createMany([]);
         $sku     = ProductSku::find($request->input('sku_id'));
         $address = UserAddress::find($request->input('address_id'));
         $amount  = $request->input('amount');

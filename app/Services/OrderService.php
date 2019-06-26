@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\CouponCodeUnavailableException;
+use App\Exceptions\InternalException;
 use App\Exceptions\InvalidRequestException;
 use App\Jobs\CloseOrder;
 use App\Models\CouponCode;
@@ -32,6 +33,7 @@ class OrderService
                 ],
                 'remark' => $remark,
                 'total_amount' => 0,
+                'type' => Order::TYPE_NORMAL,
             ]);
 
             $order->user()->associate($user);
@@ -92,6 +94,7 @@ class OrderService
                 ],
                 'remark'            => '',
                 'total_amount'      => $sku->price * $amount,
+                'type'              => Order::TYPE_CROWDFUNDING,
             ]);
             $order->user()->associate($user);
             $order->save();
@@ -113,6 +116,40 @@ class OrderService
         dispatch(new CloseOrder($order, min(config('app.order_ttl'), $crowdfundingTtl)));
 
         return $order;
+    }
+
+    public function refundOrder(Order $order)
+    {
+        switch ($order->payment_metho) {
+            case 'wechat':
+                break;
+            case 'alipay':
+                $refundNo = Order::getAvailableRefundNo();
+                $ret = app('alipay')->refund([
+                    'out_trade_no' => $order->no,
+                    'refund_amount' => $order->total_amount,
+                    'out_request_no' => $refundNo,
+                ]);
+
+                if ($ret->sub_code) {
+                    $extra = $order->extea;
+                    $extra['refund_failed_code'] = $ret->sub_code;
+                    $order->update([
+                        'refund_no' => $refundNo,
+                        'refund_status' => Order::REFUND_STATUS_FAILED,
+                        'extra' => $extra,
+                    ]);
+                } else {
+                    $order->update([
+                        'refund_no' => $refundNo,
+                        'refund_status' => Order::REFUND_STATUS_SUCCESS,
+                    ]);
+                }
+                break;
+            default:
+                throw new InternalException('未知订单支付方式: ' . $order->payment_method);
+                break;
+        }
     }
 
 }
