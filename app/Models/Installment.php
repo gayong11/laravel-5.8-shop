@@ -51,7 +51,7 @@ class Installment extends Model
     {
         $prefix = date('YmdHis');
         for ($i = 0; $i < 10; $i++) {
-            $no = $prefix.str_pad(readom_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            $no = $prefix.str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
             if (!static::query()->where('no', $no)->exists()) {
                 return $no;
             }
