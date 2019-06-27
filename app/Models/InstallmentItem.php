@@ -40,12 +40,12 @@ class InstallmentItem extends Model
 
     public function getTotalAttribute()
     {
-        $total = bcadd($this->base, $this->fee, 2);
+        $total = big_number($this->base)->add($this->fee);
         if (!is_null($this->fine)) {
-            $total = bcadd($total, $this->fine, 2);
+            $total->add($this->fine);
         }
 
-        return $total;
+        return $total->getValue();
     }
 
     public function getIsOverdueAttribute()
