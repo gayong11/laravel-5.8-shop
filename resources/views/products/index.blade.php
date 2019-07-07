@@ -9,10 +9,10 @@
                 <div class="card-body">
                     {{-- 筛选组件开始 --}}
                     <form action="{{ route('products.index') }}" class="search-form">
+                        <input type="hidden" name="filters">
                         <div class="form-row">
                             <div class="col-md-9">
                                 <div class="form-row">
-
                                     <div class="col-auto category-breadcrumb">
                                         <a href="{{ route('products.index') }}" class="all-products">全部</a>
                                         @if ($category)
@@ -29,6 +29,13 @@
                                             <span></span>
                                             <input type="hidden" name="category_id" value="{{ $category->id }}">
                                         @endif
+
+                                        @foreach($propertyFilters as $name => $value)
+                                            <span class="filter">{{ $name }}:
+                                                <span class="filter-value">{{ $value }}</span>
+                                                <a href="javascript: removeFilterFromQuery('{{ $name }}')" class="remove-filter">x</a>
+                                            </span>
+                                        @endforeach
                                     </div>
 
                                     <div class="col-auto">
@@ -66,6 +73,17 @@
                                 </div>
                             </div>
                         @endif
+
+                        @foreach($properties as $property)
+                            <div class="row">
+                                <div class="col-3 fillter-key">{{ $property['key'] }}:</div>
+                                <div class="col-9 filter-values">
+                                    @foreach($property['values'] as $value)
+                                        <a href="javascript: appendFilterToQuery('{{ $property['key'] }}', '{{ $value }}')">{{ $value }}</a>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endforeach
                     </div>
 
                     <div class="row products-list">
@@ -112,8 +130,60 @@
            $('.search-form select[name=order]').val(filters.order);
 
            $('.search-form select[name=order]').on('change', function () {
+               var searches = parseSearch();
+               if (searches['filters']) {
+                   $('.search-form input[name=filters]').val(searches['filters']);
+               }
                $('.search-form').submit();
            });
         });
+
+        function parseSearch() {
+            var searches = {};
+            location.search.substr(1).split('&').forEach(function (str) {
+                var result = str.split('=');
+                searches[decodeURIComponent(result[0])] = decodeURIComponent(result[1]);
+            });
+
+            return searches;
+        }
+
+        function buildSearch(searches) {
+            var query = '?';
+            _.forEach(searches, function (value, key) {
+                query += encodeURIComponent(key) + '=' + encodeURIComponent(value) + '&';
+            });
+
+            return query.substr(0, query.length -1);
+        }
+
+        function appendFilterToQuery(name, value) {
+            var searches = parseSearch();
+            if (searches['filters']) {
+                searches['filters'] += '|' + name + ':' + value;
+            } else {
+                searches['filters'] = name + ':' + value;
+            }
+
+            location.search = buildSearch(searches);
+        }
+
+        function removeFilterFromQuery(name) {
+            var searches = parseSearch();
+            if (!searches['filters']) {
+                return;
+            }
+
+            var filters = [];
+            searches['filters'].split('|').forEach(function (filter) {
+                var result = filter.split(':');
+                if (result[0] === name) {
+                    return;
+                }
+                filters.push(filter);
+            });
+            searches['filters'] = filters.join('|');
+            location.search = buildSearch(searches);
+        }
     </script>
 @endsection

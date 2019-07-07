@@ -6,36 +6,18 @@ use App\Exceptions\InvalidRequestException;
 use App\Models\Category;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\SearchBuilders\ProductSearchBuilder;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class ProductsController extends Controller
 {
     public function index(Request $request)
     {
-        $builder = Product::query()->where('on_sale', true);
+        $page = $request->input('page', 1);
+        $perPage = 16;
 
-        if ($search = $request->input('search', '')) {
-            $like = "%$search%";
-
-            $builder->where(function ($query) use ($like) {
-               $query->where('title', 'like', $like)
-                   ->orWhere('description', 'like', $like)
-                   ->orWhereHas('skus', function ($query) use ($like) {
-                       $query->where('title', 'like', $like)
-                           ->orWhere('description', 'like', $like);
-                   });
-            });
-        }
-
-        if ($request->input('category_id') && $category = Category::find($request->input('category_id'))) {
-            if ($category->is_directory) {
-                $builder->whereHas('category', function ($query) use ($category) {
-                    $query->where('path', 'like', $category->path . $category->id . '-%');
-                });
-            } else {
-                $builder->where('category_id', $category->id);
-            }
-        }
+        $builder = (new ProductSearchBuilder())->onSale()->paginate($perPage, $page);
 
         if ($order = $request->input('order', '')) {
             if (preg_match('/^(.+)_(asc|desc)$/', $order, $m)) {
@@ -45,15 +27,66 @@ class ProductsController extends Controller
             }
         }
 
-        $products = $builder->paginate(16);
+        if ($request->input('category_id') && $category = Category::find($request->input('category_id'))) {
+            $builder->category($category);
+        }
+
+        if ($search = $request->input('search', '')) {
+            $keywords = array_filter(explode(' ', $search));
+
+            $builder->keywords($keywords);
+        }
+
+        if ($search || isset($category)) {
+           $builder->aggregateProperties();
+        }
+
+        $propertyFilters = [];
+        if ($filterString = $request->input('filters')) {
+            $filterArray = explode('|', $filterString);
+            foreach (@$filterArray as $filter) {
+                list($name, $value) = explode(':', $filter);
+                $propertyFilters[$name] = $value;
+
+               $builder->propertyFilter($name, $value);
+            }
+        }
+
+        $result = app('es')->search($builder->getParams());
+
+        $productIds = collect($result['hits']['hits'])->pluck('_id')->all();
+        $products = Product::query()
+            ->whereIn('id', $productIds)
+            ->orderByRaw(sprintf("FIND_IN_SET(id, '%s')", join(',', $productIds)))
+            ->get();
+
+        $pager = new LengthAwarePaginator($products, $result['hits']['total'], $perPage, $page, [
+            'path' => route('products.index', false),
+        ]);
+
+        $properties = [];
+
+        if (isset($result['aggregations'])) {
+            $properties = collect($result['aggregations']['properties']['properties']['buckets'])
+                ->map(function ($bucket) {
+                    return [
+                        'key' => $bucket['key'],
+                        'values' => collect($bucket['value']['buckets'])->pluck('key')->all(),
+                    ];
+                })->filter(function ($property) use ($propertyFilters) {
+                    return count($property['values']) > 1 && !isset($propertyFilters[$property['key']]);
+                });
+        }
 
         return view('products.index', [
-            'products' => $products,
+            'products' => $pager,
             'filters' => [
                 'search' => $search,
                 'order' => $order,
             ],
-            'category' => $category ?? null,
+            'category' => $category?? null,
+            'properties' => $properties,
+            'propertyFilters' => $propertyFilters,
         ]);
     }
 
