@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\SearchBuilders\ProductSearchBuilder;
+use App\Services\ProductService;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -90,7 +91,7 @@ class ProductsController extends Controller
         ]);
     }
 
-    public function show(Product $product, Request $request)
+    public function show(Product $product, Request $request, ProductService $service)
     {
         if (!$product->on_sale) {
             throw new InvalidRequestException('商品未上架');
@@ -106,11 +107,17 @@ class ProductsController extends Controller
             ->orderBy('reviewed_at', 'desc')
             ->limit(10)
             ->get();
+        $similarProductIds = $service->getSimilarProductIds($product, 4);
+        $similarProducts = Product::query()
+            ->whereIn('id', $similarProductIds)
+            ->orderByRaw(sprintf("FIND_IN_SET(id, '%s')", join(',', $similarProductIds)))
+            ->get();
 
         return view('products.show', [
             'product' => $product,
             'favored' => $favored,
             'reviews' => $reviews,
+            'similar' => $similarProducts,
         ]);
     }
 
