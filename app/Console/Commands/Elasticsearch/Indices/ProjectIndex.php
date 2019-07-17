@@ -14,40 +14,40 @@ class ProjectIndex
     public static function getProperties()
     {
         return [
-            'type' => ['type' => 'keyword'],
-            'title' => ['type' => 'text', 'analyzer' => 'ik_smart', 'search_analyzer' => 'ik_smart_synonym'],
-            'long_title' => ['type' => 'text', 'analyzer' => 'ik_smart', 'search_analyzer' => 'ik_smart_synonym'],
-            'category_id' => ['type' => 'integer'],
-            'category' => ['type' => 'keyword'],
+            'type'          => ['type' => 'keyword'],
+            'title'         => ['type' => 'text', 'analyzer' => 'ik_smart', 'search_analyzer' => 'ik_smart_synonym'],
+            'long_title'    => ['type' => 'text', 'analyzer' => 'ik_smart', 'search_analyzer' => 'ik_smart_synonym'],
+            'category_id'   => ['type' => 'integer'],
+            'category'      => ['type' => 'keyword'],
             'category_path' => ['type' => 'keyword'],
-            'description' => ['type' => 'text', 'analyzer' => 'ik_smart'],
-            'price' => ['type' => 'scaled_float', 'scaling_factor' => 100],
-            'on_sale' => ['type' => 'boolean'],
-            'rating' => ['type' => 'float'],
-            'sold_count' => ['type' => 'text'],
-            'review_count' => ['type' => 'integer'],
-            'skus' => [
-                'type' => 'nested',
+            'description'   => ['type' => 'text', 'analyzer' => 'ik_smart'],
+            'price'         => ['type' => 'scaled_float', 'scaling_factor' => 100],
+            'on_sale'       => ['type' => 'boolean'],
+            'rating'        => ['type' => 'float'],
+            'sold_count'    => ['type' => 'integer'],
+            'review_count'  => ['type' => 'integer'],
+            'skus'          => [
+                'type'       => 'nested',
                 'properties' => [
-                    'title' => [
-                        'type' => 'text',
-                        'analyzer' => 'ik_smart',
+                    'title'       => [
+                        'type'            => 'text',
+                        'analyzer'        => 'ik_smart',
                         'search_analyzer' => 'ik_smart_synonym',
-                        'copy_to' => 'skus_title',
+                        'copy_to'         => 'skus_title',
                     ],
                     'description' => [
-                        'type' => 'text',
+                        'type'     => 'text',
                         'analyzer' => 'ik_smart',
-                        'copy_to' => 'skus_description',
+                        'copy_to'  => 'skus_description',
                     ],
-                    'price' => ['type' => 'scaled_float', 'scaling_factor' => 100],
+                    'price'       => ['type' => 'scaled_float', 'scaling_factor' => 100],
                 ],
             ],
-            'properties' => [
-                'type' => 'nested',
+            'properties'    => [
+                'type'       => 'nested',
                 'properties' => [
-                    'name' => ['type' => 'keyword'],
-                    'value' => ['type' => 'keyword', 'copy_to' => 'properties_value'],
+                    'name'         => ['type' => 'keyword'],
+                    'value'        => ['type' => 'keyword', 'copy_to' => 'properties_value'],
                     'search_value' => ['type' => 'keyword'],
                 ],
             ],
@@ -60,14 +60,14 @@ class ProjectIndex
             'analysis' => [
                 'analyzer' => [
                     'ik_smart_synonym' => [
-                        'type' => 'custom',
+                        'type'      => 'custom',
                         'tokenizer' => 'ik_smart',
-                        'filter' => ['synonym_filter'],
+                        'filter'    => ['synonym_filter'],
                     ],
                 ],
-                'filter' => [
+                'filter'   => [
                     'synonym_filter' => [
-                        'type' => 'synonym',
+                        'type'          => 'synonym',
                         'synonyms_path' => 'analysis/synonyms.txt',
                     ],
                 ],
