@@ -28,6 +28,8 @@ return [
     // 逾期日息
     'installment_fine_rate'  => 0.05,
 
+    'seckill_order_ttl' => 600,
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment
